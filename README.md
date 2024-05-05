@@ -10,10 +10,10 @@
 
 Как использовать:
 
-git clone https://github.com/sonya-sh/test-task-wallet.git  
-cd test-task-wallet  
-pip install -r requirements.txt  
-python3 main.py  
+$ git clone https://github.com/sonya-sh/test-task-wallet.git  
+$ cd test-task-wallet  
+$ pip install -r requirements.txt  
+$ python3 main.py  
   
 Выберите действие из предложенного списка:  
 "1" для просмотра баланса.  
