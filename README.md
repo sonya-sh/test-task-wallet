@@ -1,6 +1,6 @@
 ### test-task-wallet
 
-Консольное приложение для учета личных доходов и расходов.
+Тестовое задание: Консольное приложение для учета личных доходов и расходов.
 
 Функциональность:
 1. Вывод баланса: Показать текущий баланс, а также отдельно доходы и расходы.  
@@ -10,10 +10,10 @@
 
 Как использовать:
 
-git clone https://github.com/sonya-sh/test-task-wallet.git  
-cd test-task-wallet  
-pip install -r requirements.txt  
-python3 main.py  
+$ git clone https://github.com/sonya-sh/test-task-wallet.git  
+$ cd test-task-wallet  
+$ pip install -r requirements.txt  
+$ python3 main.py  
   
 Выберите действие из предложенного списка:  
 "1" для просмотра баланса.  
