@@ -30,40 +30,6 @@ class TestGetBalance:
         assert total_income == 100.0
         assert total_expense == 30.0
 
-
-class TestGetEntryData:
-
-    def test_get_entry_data(self, monkeypatch, wallet):
-
-        input_values = ['2024-05-12', 'Доход', '100', 'Зарплата']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-        
-        entry_data = wallet.get_entry_data()
-
-        assert entry_data == {
-            "Дата": "2024-05-12",
-            "Категория": "Доход",
-            "Сумма": "100.0",
-            "Описание": "Зарплата"
-        }
-
-    def test_get_entry_data_invalid_category(self, monkeypatch, wallet):
-        
-        input_values = ['2024-05-12', 'Что-то кроме Доход/Расход', '100', 'Зарплата']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-        
-        with pytest.raises(ValueError):
-            wallet.get_entry_data()
-        
-    def test_get_entry_data_invalid_summ(self, monkeypatch, wallet):
-        
-        input_values = ['2024-05-12', 'Расход', 'abc', 'Зарплата']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-        
-        with pytest.raises(ValueError):
-            wallet.get_entry_data()
-
-
 class TestAddEntry:
 
     def test_add_valid_entry(self, wallet):
@@ -83,32 +49,9 @@ class TestAddEntry:
         with open('test_data.json', 'r') as file:
             data_after = json.load(file)
             count_after = len(data_after)
-        new_entry_id = str(count_before + 1)
+
         assert count_after == count_before + 1
         assert data_after[str(count_after)] == entry_data
-        #assert new_entry_id == '4'
-
-
-class TestGetIdAndKwargsForEditEntry:
-
-    def test_valid_input(self, wallet, monkeypatch):
-
-        input_values = ['1', 'Дата Сумма ', '2024-05-12', '150']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-
-        entry_id, kwargs = wallet.get_id_and_kwargs_for_edit_entry()
-
-        assert entry_id == '1'
-        assert kwargs == {'Дата': '2024-05-12', 'Сумма': '150.0'}
-
-    def test_invalid_sum_input(self, wallet, monkeypatch):
-
-        input_values = ['1', 'Дата Сумма', '2024-05-12', 'abc']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-
-        with pytest.raises(ValueError):
-            entry_id, kwargs = wallet.get_id_and_kwargs_for_edit_entry()
-
 
 class TestEditEntry:
 
@@ -149,35 +92,6 @@ class TestEditEntry:
         with pytest.raises(ValueError):
             wallet.edit_entry(entry_id, **new_data)
 
-
-class TestGetKwargsForSearchEntry:
-
-    def test_valid_input(self, wallet, monkeypatch):
-
-        input_values = ['Дата ', '02.01.2024']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-
-        kwargs = wallet.get_kwargs_for_search_entry()
-
-        assert kwargs == {'Дата': '02.01.2024'}
-
-    def test_valid_input_many(self, wallet, monkeypatch):
-
-        input_values = ['Дата Категория', '02.01.2024', 'Расход']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-
-        kwargs = wallet.get_kwargs_for_search_entry()
-
-        assert kwargs == {'Дата': '02.01.2024', 'Категория':'Расход'}
-
-    def test_invalid_sum_input(self, wallet, monkeypatch):
-
-        input_values = ['Сумма', 'abc']
-        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
-
-        with pytest.raises(ValueError):
-            kwargs = wallet.get_kwargs_for_search_entry()
-
 class TestSearchEntry:
 
     def test_search_entry(self, wallet):
@@ -208,3 +122,91 @@ class TestSearchEntry:
 
         results = wallet.search_entry(Категория="Неизвестная категория")
         assert len(results) == 0
+
+class TestGetEntryDataForAddEntry:
+
+    def test_get_entry_data(self, monkeypatch, wallet):
+
+        input_values = ['2024-05-12', 'Доход', '100', 'Зарплата']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+        
+        entry_data = wallet.get_entry_data_for_add_entry()
+
+        assert entry_data == {
+            "Дата": "2024-05-12",
+            "Категория": "Доход",
+            "Сумма": "100.0",
+            "Описание": "Зарплата"
+        }
+
+    def test_get_entry_data_invalid_category(self, monkeypatch, wallet):
+        
+        input_values = ['2024-05-12', 'Что-то кроме Доход/Расход', '100', 'Зарплата']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+        
+        with pytest.raises(ValueError):
+            wallet.get_entry_data_for_add_entry()
+        
+    def test_get_entry_data_invalid_summ(self, monkeypatch, wallet):
+        
+        input_values = ['2024-05-12', 'Расход', 'abc', 'Зарплата']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+        
+        with pytest.raises(ValueError):
+            wallet.get_entry_data_for_add_entry()
+
+    def test_get_entry_data_negative_summ(self, monkeypatch, wallet):
+        
+        input_values = ['2024-05-12', 'Расход', '-5', 'Зарплата']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+        
+        with pytest.raises(ValueError):
+            wallet.get_entry_data_for_add_entry()
+
+class TestGetIdAndKwargsForEditEntry:
+
+    def test_valid_input(self, wallet, monkeypatch):
+
+        input_values = ['1', 'Дата Сумма ', '2024-05-12', '150']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+
+        entry_id, kwargs = wallet.get_id_and_kwargs_for_edit_entry()
+
+        assert entry_id == '1'
+        assert kwargs == {'Дата': '2024-05-12', 'Сумма': '150.0'}
+
+    def test_invalid_sum_input(self, wallet, monkeypatch):
+
+        input_values = ['1', 'Дата Сумма', '2024-05-12', 'abc']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+
+        with pytest.raises(ValueError):
+            entry_id, kwargs = wallet.get_id_and_kwargs_for_edit_entry()
+
+class TestGetKwargsForSearchEntry:
+
+    def test_valid_input(self, wallet, monkeypatch):
+
+        input_values = ['Дата ', '02.01.2024']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+
+        kwargs = wallet.get_kwargs_for_search_entry()
+
+        assert kwargs == {'Дата': '02.01.2024'}
+
+    def test_valid_input_many(self, wallet, monkeypatch):
+
+        input_values = ['Дата Категория', '02.01.2024', 'Расход']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+
+        kwargs = wallet.get_kwargs_for_search_entry()
+
+        assert kwargs == {'Дата': '02.01.2024', 'Категория':'Расход'}
+
+    def test_invalid_sum_input(self, wallet, monkeypatch):
+
+        input_values = ['Сумма', 'abc']
+        monkeypatch.setattr('builtins.input', lambda _: input_values.pop(0))
+
+        with pytest.raises(ValueError):
+            kwargs = wallet.get_kwargs_for_search_entry()

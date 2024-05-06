@@ -14,7 +14,7 @@ class Wallet:
         print(f"Сумма доходов: {total_income}")
         print(f"Сумма расходов: {total_expense}")
 
-    # 2. Добавление записи: Возможность добавления новой записи о доходе или расходе.
+    # 2. Добавление новой записи о доходе или расходе.
     def add_entry(self, entry_data: Dict[str, str]) -> None:
 
         with open(self.file_path, 'r+') as file:
@@ -29,7 +29,7 @@ class Wallet:
             file.seek(0)
             json.dump(data, file, indent=4, ensure_ascii=False)
             
-    # 3. Редактирование записи: Изменение существующих записей о доходах и расходах.
+    # 3. Редактирование записи: Изменение существующей записи.
     def edit_entry(self, entry_id: str, **kwargs: Dict[str, str]) -> None:
 
         with open(self.file_path, 'r+') as file:
@@ -54,9 +54,9 @@ class Wallet:
 
             json.dump(data, file, indent=4, ensure_ascii=False)
     
-    # 4. Поиск по записям: Поиск записей по категории, дате или сумме.
-    # Поиск доступен как по значению одного поля, так и по нескольким полям (проверяется совпадение сразу нескольких полей)
-    def search_entry(self, **kwargs: Dict[str, str]) -> None:
+    # 4. Поиск по записям: Поиск записей по категории, дате, сумме или описанию.
+    # Поиск доступен как по одному полю, так и по нескольким полям (проверяется совпадение сразу нескольких полей)
+    def search_entry(self, **kwargs: Dict[str, str]) -> Dict[str, Dict[str, str]]:
         
         with open(self.file_path, 'r') as file:
             try:
@@ -64,7 +64,7 @@ class Wallet:
             except json.JSONDecodeError:
                 raise ValueError("Некорректный формат файла JSON.")
 
-            results = {}
+            results: Dict[str, Dict[str, str]] = {}
 
             for entry_id, entry in data.items():
                 match_all_criteria = True
@@ -112,11 +112,21 @@ class Wallet:
 
     # Функция для получения словаря с данными добавляемой записи.
     # Применяется для add_entry
-    def get_entry_data(self) -> Dict[str, str]:
+    def get_entry_data_for_add_entry(self) -> Dict[str, str]:
         
         date = input("Введите дату: ")
         category = str(input("Введите категорию (Доход/Расход): "))
-        summ = str(float(input("Введите сумму: ")))
+        
+        summ_str = input("Введите сумму: ")
+
+        # Проверка, что сумма является неотрицательной
+        try:
+            summ = float(summ_str)
+            if summ < 0:
+                raise ValueError("Сумма не может быть отрицательной.")
+        except ValueError:
+            raise ValueError("Сумма должна быть числом.")
+
         description = input("Введите описание: ")
     
         if category not in ("Доход", "Расход"):
@@ -125,7 +135,7 @@ class Wallet:
         entry_data: Dict[str, str] = {
             "Дата": date,
             "Категория": category,
-            "Сумма": summ,
+            "Сумма": str(summ),
             "Описание": description
         }
     
@@ -144,9 +154,12 @@ class Wallet:
             new_value: str = input(f"Введите новое значение для поля '{field}': ")
             if field == "Сумма":
                 try:
-                    new_value = str(float(new_value))
+                    new_value = float(new_value)
+                    if new_value < 0:
+                        raise ValueError("Сумма не может быть отрицательной.")
                 except ValueError as e:
-                    raise ValueError("Ошибка: Введите корректное числовое значение для поля 'Сумма'.") from e
+                    raise ValueError("Сумма должна быть числом.") from e
+                new_value = str(new_value)
             new_values[field] = new_value
 
         return entry_id, new_values
@@ -163,10 +176,13 @@ class Wallet:
             if key == "Сумма":
                 try:
                     value_for_key_for_search = str(float(value_for_key_for_search))
+                    if value_for_key_for_search < 0:
+                        raise ValueError("Сумма не может быть отрицательной.")
                 except ValueError as e:
-                    raise ValueError("Ошибка: Введите корректное числовое значение для поля 'Сумма'.") from e
+                    raise ValueError("Сумма должна быть числом.") from e
+                value_for_key_for_search = str(value_for_key_for_search)
             kwargs[key] = value_for_key_for_search
-            
+
         return kwargs
     
 
@@ -188,8 +204,9 @@ def main():
 
         if choice == "1":
             wallet.show_balance()
+            
         elif choice == "2":
-            wallet.add_entry(wallet.get_entry_data())
+            wallet.add_entry(wallet.get_entry_data_for_add_entry())
 
         elif choice == "3":
             entry_id, kwargs = wallet.get_id_and_kwargs_for_edit_entry()
