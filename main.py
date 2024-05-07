@@ -1,5 +1,109 @@
 import json
 from typing import Dict, List, Tuple
+from datetime import datetime
+
+# Функция, обрабатывающая корректный ввод даты.
+def get_date_input(prompt: str = None, error_message: str = "Дата не может быть пустой.") -> str:
+    while True:
+        date_str = input(prompt)
+        if date_str:
+            try:
+                datetime.strptime(date_str, '%d-%m-%Y')
+                return date_str
+            except ValueError as e:
+                if (f"time data '{date_str}' does not match format '%d-%m-%Y'") in str(e):
+                    print("Дата должна быть в формате дд-мм-гггг")
+        else:
+            print(error_message)
+
+# Функция, обрабатывающая корректный ввод категории.
+def get_category_input(prompt: str = None, error_message: str = "Некорректная категория. Введите 'Доход' или 'Расход'.") -> str:
+    while True:
+        category = input(prompt)
+        if category in ("Доход", "Расход"):
+            return category
+        else:
+            print(error_message)
+
+# Функция, обрабатывающая корректный ввод суммы.
+def get_summ_input(prompt: str = None, error_message: str = "Значение должно быть числом") -> str:
+    while True:
+        try:
+            value = float(input(prompt))
+            if value < 0:
+                raise ValueError("Значение не может быть отрицательным.")
+            return str(value)
+        except ValueError as e:
+            if "could not convert string to float" in str(e):
+                print(error_message)
+            else:
+                print(e)
+
+# Функция для получения словаря с данными добавляемой записи.
+# Применяется для метода add_entry
+def get_entry_data_for_add_entry() -> Dict[str, str]:
+    entry_data: Dict[str, str] = {}
+
+    entry_data["Дата"] = get_date_input("Введите дату в формате дд-мм-ггг: ")
+    entry_data["Категория"] = get_category_input("Введите категорию (Доход/Расход): ")
+    entry_data["Сумма"] = get_summ_input("Введите сумму: ")
+    entry_data["Описание"] = input("Введите описание: ")
+
+    return entry_data
+    
+# Функция для получния id записи, которую нужно отредактировать, а также 
+# пар ключ-значение, представляющих поля и новые значения для редактирования.
+# Применяется для метода edit_entry
+def get_id_and_kwargs_for_edit_entry() -> Tuple[str, Dict[str, str]]:
+
+    entry_id: str = input("Введите ID записи, которую хотите отредактировать: ")
+    fields_to_edit: List[str] = input("Введите поле для редактирования, или несколько полей через пробел (например: Сумма Дата): ").strip().split(' ')
+    new_values: Dict[str, str] = {}
+
+    # Словарь с полями, которые нужно проверять на корректность (значения - соответствующие проверяющие функции)
+    input_functions = {
+        "Дата": get_date_input,
+        "Категория": get_category_input,
+        "Сумма": get_summ_input,
+    }
+
+    for field in fields_to_edit:
+        input_function = input_functions.get(field, input)  # Если для поля нет специальной функции, используется input
+        new_value = input_function(f"Введите новое значение для поля '{field}': ")
+        new_values[field] = new_value
+
+    return entry_id, new_values
+    
+# Функция для получния пар ключ-значение, представляющих поля и их значения для поиска записей.
+# Применяется для search_entry
+def get_kwargs_for_search_entry() -> Dict[str, str]:
+    
+    keys_for_search: List[str] = input("Введите поле для поиска, или несколько полей через пробел (например: Дата, Категория): ").strip().split(' ')
+    kwargs: Dict[str, str] = {}
+
+    input_functions = {
+        "Дата": get_date_input,
+        "Категория": get_category_input,
+        "Сумма": get_summ_input,
+    }
+
+    for key in keys_for_search:
+        input_function = input_functions.get(key, input)  # Если для поля нет специальной функции, используется input
+        value_for_key_for_search = input_function(f"Введите значение для поля '{key}' поиска: ")
+        kwargs[key] = value_for_key_for_search
+
+    return kwargs
+    
+# Вывод словаря записей. 
+# Применяется для вывода результатов search_entry
+def print_results(results: Dict[str, Dict[str, str]]) -> None:
+    print('\n')
+    for entry_id, entry_data in results.items():
+        print(f"{entry_id}: ")
+        for key, value in entry_data.items():
+            print(f"    {key}: {value}")
+        print(" ")
+
 
 class Wallet:
 
@@ -79,17 +183,8 @@ class Wallet:
 
             return results
             
-    # Вывод словаря записей. 
-    # Применяется для вывода результатов search_entry
-    def print_results(self, results: Dict[str, Dict[str, str]]) -> None:
-        for entry_id, entry_data in results.items():
-            print(f"{entry_id}: ")
-            for key, value in entry_data.items():
-                print(f"    {key}: {value}")
-            print(" ")
-
     # Функция для получения кортежа с тремя элементами: общий баланс, сумма доходов, сумма расходов.
-    # Применяется для show_balance
+    # Применяется для метода show_balance
     def get_balance(self) -> Tuple[float, float, float]:
 
         total_income: float = 0
@@ -109,89 +204,15 @@ class Wallet:
         
         total_balance: float = total_income - total_expense
         return total_balance, total_income, total_expense
-
-    # Функция для получения словаря с данными добавляемой записи.
-    # Применяется для add_entry
-    def get_entry_data_for_add_entry(self) -> Dict[str, str]:
-        
-        date = input("Введите дату: ")
-        category = str(input("Введите категорию (Доход/Расход): "))
-        
-        summ_str = input("Введите сумму: ")
-
-        # Проверка, что сумма является неотрицательной
-        try:
-            summ = float(summ_str)
-            if summ < 0:
-                raise ValueError("Сумма не может быть отрицательной.")
-        except ValueError:
-            raise ValueError("Сумма должна быть числом.")
-
-        description = input("Введите описание: ")
     
-        if category not in ("Доход", "Расход"):
-            raise ValueError("Некорректная категория. Введите 'Доход' или 'Расход'.")
-
-        entry_data: Dict[str, str] = {
-            "Дата": date,
-            "Категория": category,
-            "Сумма": str(summ),
-            "Описание": description
-        }
     
-        return entry_data
-
-    # Вспомогательная функция для получния id записи, которую нужно отредактировать, а также 
-    # пар ключ-значение, представляющих поля и новые значения для редактирования.
-    # Применяется для edit_entry
-    def get_id_and_kwargs_for_edit_entry(self) -> Tuple[str, Dict[str, str]]:
-        
-        entry_id: str = input("Введите ID записи, которую хотите отредактировать: ")
-        fields_to_edit: List[str] = input("Введите поля для редактирования через пробел: ").strip().split(' ')
-        new_values: Dict[str, str] = {}
-
-        for field in fields_to_edit:
-            new_value: str = input(f"Введите новое значение для поля '{field}': ")
-            if field == "Сумма":
-                try:
-                    new_value = float(new_value)
-                    if new_value < 0:
-                        raise ValueError("Сумма не может быть отрицательной.")
-                except ValueError as e:
-                    raise ValueError("Сумма должна быть числом.") from e
-                new_value = str(new_value)
-            new_values[field] = new_value
-
-        return entry_id, new_values
-    
-    # Вспомогательная функция для получния пар ключ-значение, представляющих поля и их значения для поиска записей.
-    # Применяется для search_entry
-    def get_kwargs_for_search_entry(self) -> Dict[str, str]:
-    
-        keys_for_search: List[str] = input("Введите поля для поиска через пробел: ").strip().split(' ')
-        kwargs: Dict[str, str] = {}
-
-        for key in keys_for_search:
-            value_for_key_for_search: str = input(f"Введите значение для поля {key} поиска: ")
-            if key == "Сумма":
-                try:
-                    value_for_key_for_search = str(float(value_for_key_for_search))
-                    if value_for_key_for_search < 0:
-                        raise ValueError("Сумма не может быть отрицательной.")
-                except ValueError as e:
-                    raise ValueError("Сумма должна быть числом.") from e
-                value_for_key_for_search = str(value_for_key_for_search)
-            kwargs[key] = value_for_key_for_search
-
-        return kwargs
-    
-
 def main():
 
     file_path = 'data.json'
     wallet = Wallet(file_path)
 
     while True:
+
         print("\n")
         print("1. Показать баланс")
         print("2. Добавить запись")
@@ -206,15 +227,15 @@ def main():
             wallet.show_balance()
             
         elif choice == "2":
-            wallet.add_entry(wallet.get_entry_data_for_add_entry())
+            wallet.add_entry(get_entry_data_for_add_entry())
 
         elif choice == "3":
-            entry_id, kwargs = wallet.get_id_and_kwargs_for_edit_entry()
+            entry_id, kwargs = get_id_and_kwargs_for_edit_entry()
             wallet.edit_entry(entry_id, **kwargs)
 
         elif choice == "4":
-            kwargs = wallet.get_kwargs_for_search_entry()
-            wallet.print_results(wallet.search_entry(**kwargs))
+            kwargs = get_kwargs_for_search_entry()
+            print_results(wallet.search_entry(**kwargs))
             
         elif choice == "5":
             break
