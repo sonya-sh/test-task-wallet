@@ -1,3 +1,4 @@
+import os
 import json
 from typing import Dict, List, Tuple
 from datetime import datetime
@@ -109,6 +110,12 @@ class Wallet:
 
     def __init__(self, file_path):
         self.file_path = file_path
+        self.initialize_file()
+
+    def initialize_file(self):
+        if not os.path.exists(self.file_path):
+            with open(self.file_path, 'w') as file:
+                file.write('{}')
 
     # 1. Вывод баланса: Показать текущий баланс, а также отдельно доходы и расходы.
     def show_balance(self) -> None:
